@@ -1,0 +1,149 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createProduct, updateProduct } from "@/lib/actions/admin-actions";
+import type { Product } from "@prisma/client";
+
+type ProductFormProps = {
+  product?: Product;
+};
+
+export function ProductForm({ product }: ProductFormProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [category, setCategory] = useState(product?.category ?? "SHIRT");
+  const [fitStyle, setFitStyle] = useState(product?.fitStyle ?? "REGULAR");
+  const [stockStatus, setStockStatus] = useState(product?.stockStatus ?? "IN_STOCK");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    formData.set("category", category);
+    formData.set("fitStyle", fitStyle);
+    formData.set("stockStatus", stockStatus);
+
+    const result = product
+      ? await updateProduct(product.id, formData)
+      : await createProduct(formData);
+
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    router.push("/admin/products");
+    router.refresh();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{product ? "Edit Product" : "Add New Product"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Product Name</Label>
+              <Input id="name" name="name" defaultValue={product?.name} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Price (₹)</Label>
+              <Input id="price" name="price" type="number" defaultValue={product?.price} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SHIRT">Shirt</SelectItem>
+                  <SelectItem value="PANT">Pant</SelectItem>
+                  <SelectItem value="SUIT">Suit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fabric">Fabric</Label>
+              <Input id="fabric" name="fabric" defaultValue={product?.fabric} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Fit Style</Label>
+              <Select value={fitStyle} onValueChange={setFitStyle}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SLIM">Slim</SelectItem>
+                  <SelectItem value="REGULAR">Regular</SelectItem>
+                  <SelectItem value="RELAXED">Relaxed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Stock Status</Label>
+              <Select value={stockStatus} onValueChange={setStockStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IN_STOCK">In Stock</SelectItem>
+                  <SelectItem value="LOW_STOCK">Low Stock</SelectItem>
+                  <SelectItem value="OUT_OF_STOCK">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" name="description" defaultValue={product?.description} required rows={4} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image">Image URL</Label>
+            <Input
+              id="image"
+              name="image"
+              type="url"
+              defaultValue={product?.images[0]}
+              placeholder="https://images.unsplash.com/..."
+              required
+            />
+          </div>
+
+          <div className="flex gap-4">
+            <Button type="button" variant="outline" onClick={() => router.back()}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : product ? "Update Product" : "Create Product"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
