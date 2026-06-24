@@ -25,9 +25,25 @@ export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [category, setCategory] = useState(product?.category ?? "SHIRT");
-  const [fitStyle, setFitStyle] = useState(product?.fitStyle ?? "REGULAR");
-  const [stockStatus, setStockStatus] = useState(product?.stockStatus ?? "IN_STOCK");
+
+  const [category, setCategory] = useState<"SHIRT" | "PANT" | "SUIT">(
+    (product?.category as "SHIRT" | "PANT" | "SUIT") ?? "SHIRT"
+  );
+
+  const [fitStyle, setFitStyle] = useState<
+    "REGULAR" | "SLIM" | "RELAXED"
+  >(
+    (product?.fitStyle as "REGULAR" | "SLIM" | "RELAXED") ?? "REGULAR"
+  );
+
+  const [stockStatus, setStockStatus] = useState<
+    "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK"
+  >(
+    (product?.stockStatus as
+      | "IN_STOCK"
+      | "LOW_STOCK"
+      | "OUT_OF_STOCK") ?? "IN_STOCK"
+  );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,6 +51,7 @@ export function ProductForm({ product }: ProductFormProps) {
     setError("");
 
     const formData = new FormData(e.currentTarget);
+
     formData.set("category", category);
     formData.set("fitStyle", fitStyle);
     formData.set("stockStatus", stockStatus);
@@ -57,27 +74,51 @@ export function ProductForm({ product }: ProductFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{product ? "Edit Product" : "Add New Product"}</CardTitle>
+        <CardTitle>
+          {product ? "Edit Product" : "Add New Product"}
+        </CardTitle>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
-              <Input id="name" name="name" defaultValue={product?.name} required />
+              <Input
+                id="name"
+                name="name"
+                defaultValue={product?.name}
+                required
+              />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="price">Price (₹)</Label>
-              <Input id="price" name="price" type="number" defaultValue={product?.price} required />
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                defaultValue={product?.price}
+                required
+              />
             </div>
+
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={category}onValueChange={(value) =>setCategory(value as "SHIRT" | "PANT" | "SUIT")}>
+              <Select
+                value={category}
+                onValueChange={(value) =>
+                  setCategory(value as "SHIRT" | "PANT" | "SUIT")
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="SHIRT">Shirt</SelectItem>
                   <SelectItem value="PANT">Pant</SelectItem>
@@ -85,16 +126,31 @@ export function ProductForm({ product }: ProductFormProps) {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="fabric">Fabric</Label>
-              <Input id="fabric" name="fabric" defaultValue={product?.fabric} required />
+              <Input
+                id="fabric"
+                name="fabric"
+                defaultValue={product?.fabric}
+                required
+              />
             </div>
+
             <div className="space-y-2">
               <Label>Fit Style</Label>
-              <Select value={fitStyle} onValueChange={setFitStyle}>
+              <Select
+                value={fitStyle}
+                onValueChange={(value) =>
+                  setFitStyle(
+                    value as "REGULAR" | "SLIM" | "RELAXED"
+                  )
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="SLIM">Slim</SelectItem>
                   <SelectItem value="REGULAR">Regular</SelectItem>
@@ -102,16 +158,30 @@ export function ProductForm({ product }: ProductFormProps) {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label>Stock Status</Label>
-              <Select value={stockStatus} onValueChange={setStockStatus}>
+              <Select
+                value={stockStatus}
+                onValueChange={(value) =>
+                  setStockStatus(
+                    value as
+                      | "IN_STOCK"
+                      | "LOW_STOCK"
+                      | "OUT_OF_STOCK"
+                  )
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="IN_STOCK">In Stock</SelectItem>
                   <SelectItem value="LOW_STOCK">Low Stock</SelectItem>
-                  <SelectItem value="OUT_OF_STOCK">Out of Stock</SelectItem>
+                  <SelectItem value="OUT_OF_STOCK">
+                    Out of Stock
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -119,7 +189,13 @@ export function ProductForm({ product }: ProductFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" defaultValue={product?.description} required rows={4} />
+            <Textarea
+              id="description"
+              name="description"
+              defaultValue={product?.description}
+              required
+              rows={4}
+            />
           </div>
 
           <div className="space-y-2">
@@ -128,18 +204,27 @@ export function ProductForm({ product }: ProductFormProps) {
               id="image"
               name="image"
               type="url"
-              defaultValue={product?.images[0]}
+              defaultValue={product?.images?.[0]}
               placeholder="https://images.unsplash.com/..."
               required
             />
           </div>
 
           <div className="flex gap-4">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+            >
               Cancel
             </Button>
+
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : product ? "Update Product" : "Create Product"}
+              {loading
+                ? "Saving..."
+                : product
+                ? "Update Product"
+                : "Create Product"}
             </Button>
           </div>
         </form>
