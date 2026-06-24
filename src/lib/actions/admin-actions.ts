@@ -1,5 +1,6 @@
 "use server";
 
+import cloudinary from "@/lib/cloudinary";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
@@ -69,41 +70,121 @@ export async function getAdminProduct(id: string) {
 export async function createProduct(formData: FormData) {
   await requireAdmin();
 
+  const imageFile = formData.get("image") as File;
+
+  let imageUrl = "";
+
+  if (imageFile && imageFile.size > 0) {
+    const bytes = await imageFile.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadResult: any = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: "ok-shirts/products",
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
+
+    imageUrl = uploadResult.secure_url;
+  }
+
   const raw = {
     name: formData.get("name") as string,
     description: formData.get("description") as string,
     category: formData.get("category") as "SHIRT" | "PANT" | "SUIT",
     price: formData.get("price") as string,
     fabric: formData.get("fabric") as string,
-    fitStyle: (formData.get("fitStyle") as "SLIM" | "REGULAR" | "RELAXED") || "REGULAR",
-    images: [(formData.get("image") as string)].filter(Boolean),
-    stockStatus: (formData.get("stockStatus") as "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK") || "IN_STOCK",
+    fitStyle:
+      (formData.get("fitStyle") as
+        | "SLIM"
+        | "REGULAR"
+        | "RELAXED") || "REGULAR",
+    images: imageUrl ? [imageUrl] : [],
+    stockStatus:
+      (formData.get("stockStatus") as
+        | "IN_STOCK"
+        | "LOW_STOCK"
+        | "OUT_OF_STOCK") || "IN_STOCK",
     isActive: formData.get("isActive") !== "false",
   };
 
   const parsed = productSchema.safeParse(raw);
+
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Invalid product data" };
+    return {
+      error:
+        parsed.error.errors[0]?.message ??
+        "Invalid product data",
+    };
   }
 
   const slug = slugify(parsed.data.name);
 
-  const existing = await db.product.findUnique({ where: { slug } });
+  const existing = await db.product.findUnique({
+    where: { slug },
+  });
+
   if (existing) {
-    return { error: "A product with this name already exists" };
+    return {
+      error: "A product with this name already exists",
+    };
   }
 
   await db.product.create({
-    data: { ...parsed.data, slug },
+    data: {
+      ...parsed.data,
+      slug,
+    },
   });
 
   revalidatePath("/admin/products");
   revalidatePath("/shop");
+
   return { success: true };
 }
 
-export async function updateProduct(id: string, formData: FormData) {
+export async function updateProduct(
+  id: string,
+  formData: FormData
+) {
   await requireAdmin();
+
+  const existingProduct = await db.product.findUnique({
+    where: { id },
+  });
+
+  const imageFile = formData.get("image") as File;
+
+  let imageUrl =
+    existingProduct?.images?.[0] ?? "";
+
+  if (imageFile && imageFile.size > 0) {
+    const bytes = await imageFile.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const uploadResult: any = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: "ok-shirts/products",
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        )
+        .end(buffer);
+    });
+
+    imageUrl = uploadResult.secure_url;
+  }
 
   const raw = {
     name: formData.get("name") as string,
@@ -111,15 +192,28 @@ export async function updateProduct(id: string, formData: FormData) {
     category: formData.get("category") as "SHIRT" | "PANT" | "SUIT",
     price: formData.get("price") as string,
     fabric: formData.get("fabric") as string,
-    fitStyle: (formData.get("fitStyle") as "SLIM" | "REGULAR" | "RELAXED") || "REGULAR",
-    images: [(formData.get("image") as string)].filter(Boolean),
-    stockStatus: (formData.get("stockStatus") as "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK") || "IN_STOCK",
+    fitStyle:
+      (formData.get("fitStyle") as
+        | "SLIM"
+        | "REGULAR"
+        | "RELAXED") || "REGULAR",
+    images: imageUrl ? [imageUrl] : [],
+    stockStatus:
+      (formData.get("stockStatus") as
+        | "IN_STOCK"
+        | "LOW_STOCK"
+        | "OUT_OF_STOCK") || "IN_STOCK",
     isActive: formData.get("isActive") !== "false",
   };
 
   const parsed = productSchema.safeParse(raw);
+
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Invalid product data" };
+    return {
+      error:
+        parsed.error.errors[0]?.message ??
+        "Invalid product data",
+    };
   }
 
   await db.product.update({
@@ -129,6 +223,7 @@ export async function updateProduct(id: string, formData: FormData) {
 
   revalidatePath("/admin/products");
   revalidatePath("/shop");
+
   return { success: true };
 }
 

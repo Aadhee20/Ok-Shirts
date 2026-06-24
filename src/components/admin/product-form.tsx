@@ -199,14 +199,13 @@ export function ProductForm({ product }: ProductFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
-            <Input
+            <Label htmlFor="image">Product Image</Label>
+            <input
               id="image"
               name="image"
-              type="url"
-              defaultValue={product?.images?.[0]}
-              placeholder="https://images.unsplash.com/..."
-              required
+              type="file"
+              accept="image/*"
+              capture="environment"
             />
           </div>
 
