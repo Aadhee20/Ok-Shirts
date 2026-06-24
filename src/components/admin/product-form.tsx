@@ -74,7 +74,7 @@ export function ProductForm({ product }: ProductFormProps) {
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category}onValueChange={(value) =>setCategory(value as "SHIRT" | "PANT" | "SUIT")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
